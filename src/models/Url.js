@@ -12,7 +12,7 @@ const urlSchema = new mongoose.Schema(
       required: true,
       unique: true,
       index: true,
-    },
+    }, 
 
     expiresAt: {
       type: Date,

@@ -9,5 +9,5 @@ export async function connectDB() {
 
   await mongoose.connect(uri);
 
-  console.log("MongoDB connected successfully");
+  console.log("MongoDB connected successfully ");
 }

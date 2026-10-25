@@ -48,7 +48,7 @@ export async function createShortUrl(req, res, next) {
 export async function redirectToOriginalUrl(req, res, next) {
   try {
     const { code } = req.params;
-
+ 
     const url = await Url.findOne({
       shortCode: code,
     }).lean();

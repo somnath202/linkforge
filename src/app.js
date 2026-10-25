@@ -8,7 +8,7 @@ import { redirectToOriginalUrl } from "./controllers/link.controller.js";
 import errorHandler from "./middleware/errorHandler.js";
 
 const app = express();
-
+ 
 app.use(helmet());
 app.use(cors());
 app.use(express.json({ limit: "10kb" }));
