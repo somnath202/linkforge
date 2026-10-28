@@ -7,3 +7,4 @@ const router = Router();
 router.get("/:code/analytics", getLinkAnalytics);
 
 export default router;
+ 

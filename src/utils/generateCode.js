@@ -7,4 +7,4 @@ const generateRandomCode = customAlphabet(
 
 export default function generateCode() {
   return generateRandomCode();
-}
+} 

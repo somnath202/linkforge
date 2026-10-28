@@ -52,7 +52,7 @@ async function startWorker() {
         console.log(`Recorded click for ${job.data.shortCode}`);
       }
     },
-    {
+    { 
       connection,
       concurrency: 5,
     }

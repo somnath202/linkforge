@@ -6,7 +6,7 @@ import { analyticsQueue } from "../queues/analytics.queue.js";
 import { randomUUID } from "node:crypto";
 import { createLinkLimiter } from "../middleware/rateLimiter.js";
 import { Router } from "express";
-
+ 
 const router = Router();
 
 // Rate limiter runs before the controller.

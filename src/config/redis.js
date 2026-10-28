@@ -16,5 +16,5 @@ export async function connectRedis() {
 
   console.log("Redis connected successfully");
 }
-
+ 
 export default redisClient;

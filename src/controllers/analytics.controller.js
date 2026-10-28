@@ -8,7 +8,7 @@ export async function getLinkAnalytics(req, res, next) {
     const totalClicks = await ClickEvent.countDocuments({
       shortCode: code,
     });
-
+ 
     return res.status(200).json({
       shortCode: code,
       totalClicks,
