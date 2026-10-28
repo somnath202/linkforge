@@ -47,9 +47,15 @@ async function startWorker() {
         { upsert: true }
       );
 
-      console.log(`Recorded click for ${job.data.shortCode}`);
+      // Avoid logging every click under heavy load.
+      if (job.attemptsMade === 0) {
+        console.log(`Recorded click for ${job.data.shortCode}`);
+      }
     },
-    { connection }
+    {
+      connection,
+      concurrency: 5,
+    }
   );
 
   worker.on("failed", (job, error) => {
@@ -97,6 +103,6 @@ process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
 
 startWorker().catch(async (error) => {
   console.error("Failed to start analytics worker:", error.message);
-  await mongoose.disconnect().catch(() => {});
+  await mongoose.disconnect().catch(() => { });
   process.exitCode = 1;
 });
