@@ -1,7 +1,18 @@
 import Url from "../models/Url.js";
 import generateCode from "../utils/generateCode.js";
 import redisClient from "../config/redis.js";
-import ClickEvent from "../models/ClickEvent.js";
+// import ClickEvent from "../models/ClickEvent.js";    no longer needed since we are using a queue for analytics
+import { analyticsQueue } from "../queues/analytics.queue.js";
+import { randomUUID } from "node:crypto";
+import { createLinkLimiter } from "../middleware/rateLimiter.js";
+import { Router } from "express";
+
+const router = Router();
+
+// Rate limiter runs before the controller.
+router.post("/", createLinkLimiter, createShortUrl);
+
+export default router;
 
 export async function createShortUrl(req, res, next) {
   try {
@@ -28,13 +39,6 @@ export async function createShortUrl(req, res, next) {
         error: "Only HTTP and HTTPS URLs are supported",
       });
     }
-
-    // const shortCode = generateCode();
-
-    // const savedUrl = await Url.create({
-    //   originalUrl: parsedUrl.toString(),
-    //   shortCode,
-    // });
 
 
     let savedUrl;
@@ -82,7 +86,6 @@ export async function createShortUrl(req, res, next) {
 }
 
 
-
 export async function redirectToOriginalUrl(req, res, next) {
   try {
     const { code } = req.params;
@@ -101,7 +104,7 @@ export async function redirectToOriginalUrl(req, res, next) {
       }
     }
 
-    // 2. Cache miss, or Redis unavailable: query MongoDB.
+    // 2. Query MongoDB on a cache miss.
     if (!originalUrl) {
       const url = await Url.findOne({
         shortCode: code,
@@ -121,11 +124,11 @@ export async function redirectToOriginalUrl(req, res, next) {
 
       originalUrl = url.originalUrl;
 
-      // 3. Cache successful lookups for one hour.
-      if (cacheAvailable && redisClient.isReady) {
+      // Cache only URLs without an expiration date.
+      // This avoids bypassing expiry checks on cached URLs.
+      if (!url.expiresAt && cacheAvailable && redisClient.isReady) {
         try {
           const ttl = Number(process.env.REDIS_TTL_SECONDS) || 3600;
-
           await redisClient.set(cacheKey, originalUrl, {
             EX: ttl,
           });
@@ -135,13 +138,21 @@ export async function redirectToOriginalUrl(req, res, next) {
       }
     }
 
-    // 4. Redirect without waiting for analytics.
-    await ClickEvent.create({
-      shortCode: code,
-      referrer: req.get("referer") || null,
-      userAgent: req.get("user-agent") || null,
-    });
+    // 3. Record analytics without allowing its failure
+    // to prevent the redirect.
+    try {
+      await analyticsQueue.add("record-click", {
+        eventId: randomUUID(),
+        shortCode: code,
+        referrer: req.get("referer") || null,
+        userAgent: req.get("user-agent") || null,
+      });
 
+    } catch (error) {
+      console.error("Failed to enqueue click analytics:", error.message);
+    }
+
+    // 4. Redirect to the destination.
     return res.redirect(302, originalUrl);
   } catch (error) {
     next(error);

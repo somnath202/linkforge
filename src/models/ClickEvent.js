@@ -19,11 +19,18 @@ const clickEventSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
- 
+
     userAgent: {
       type: String,
       default: null,
     },
+
+    eventId: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+
   },
   {
     versionKey: false,
